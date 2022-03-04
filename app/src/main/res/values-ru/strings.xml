@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">UpdaterETIS</string>
+    <string name="loading">Загрузка…</string>
+    <string name="permission_title">Доступ к вашим файлам</string>
+    <string name="permission_message">Данное разрешение необходимо для обновления преложения. Предоставить разрешения можно в приложении \"Настройки\".</string>
+    <string name="setting">Перейти в настройки</string>
+</resources>

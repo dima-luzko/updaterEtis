@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">UpdaterETIS</string>
+    <string name="loading">Loading…</string>
+    <string name="permission_title">Access to your files</string>
+    <string name="permission_message">This permission is required to update application. You can grant permissions in \"Settings\" application.</string>
+    <string name="setting">Перейти в настройки</string>
+</resources>
