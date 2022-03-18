@@ -34,21 +34,32 @@ class CheckInternetConnectionViewModel(val context: Context) : ViewModel() {
         job?.cancel()
         Log.d(Constants.INTERNET_CONNECTED_LOG, "stop check internet connection")
     }
+    var exitValue = 0
 
     private suspend fun networkState() {
         while (true) {
-            val connectivityManager =
-                getSystemService(context, ConnectivityManager::class.java) as ConnectivityManager
-            val activeNetworkInfo = connectivityManager.activeNetworkInfo
-            if (activeNetworkInfo != null && activeNetworkInfo.isConnectedOrConnecting) {
-                _networkIsConnected.postValue(true)
-                PreferencesManager.getInstance(context)
-                    .putBoolean(PreferencesManager.PREF_NETWORK_IS_ACTIVE, true)
-            } else {
-                PreferencesManager.getInstance(context)
-                    .putBoolean(PreferencesManager.PREF_NETWORK_IS_ACTIVE, false)
+//            val connectivityManager =
+//                getSystemService(context, ConnectivityManager::class.java) as ConnectivityManager
+//            val activeNetworkInfo = connectivityManager.activeNetworkInfo
+//            if (activeNetworkInfo != null && activeNetworkInfo.isConnectedOrConnecting) {
+//                _networkIsConnected.postValue(true)
+//                PreferencesManager.getInstance(context)
+//                    .putBoolean(PreferencesManager.PREF_NETWORK_IS_ACTIVE, true)
+//            } else {
+//                PreferencesManager.getInstance(context)
+//                    .putBoolean(PreferencesManager.PREF_NETWORK_IS_ACTIVE, false)
+//                _networkIsConnected.postValue(false)
+//            }
+            val runtime = Runtime.getRuntime()
+            runCatching {
+                val ipProcess = runtime.exec("/system/bin/ping -c 1 tc.by")
+                exitValue = ipProcess.waitFor()
+            }.onSuccess {
+                _networkIsConnected.postValue(exitValue == 0)
+            }.onFailure {
                 _networkIsConnected.postValue(false)
             }
+
             delay(5000)
         }
 
