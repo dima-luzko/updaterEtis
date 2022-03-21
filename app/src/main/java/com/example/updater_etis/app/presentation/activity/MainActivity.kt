@@ -12,12 +12,16 @@ import android.provider.Settings
 import android.util.Log
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.pm.PackageInfoCompat
+import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import com.example.updater_etis.R
 import com.example.updater_etis.app.presentation.viewModel.CheckInternetConnectionViewModel
 import com.example.updater_etis.databinding.ActivityMainBinding
+import com.example.updater_etis.framework.remote.RemoteDataSource
 import com.example.updater_etis.utils.Constants
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import net.codecision.startask.permissions.Permission
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
@@ -26,8 +30,7 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private lateinit var pInfo: PackageInfo
-    var exitValue = 0
-    var vwrsion = ""
+    private var appETISVersion = 0
     private val checkInternetConnectionViewModel by viewModel<CheckInternetConnectionViewModel>()
     private val permission: Permission by lazy {
         Permission.Builder(Manifest.permission.WRITE_EXTERNAL_STORAGE)
@@ -43,34 +46,25 @@ class MainActivity : AppCompatActivity() {
         hideSystemUI()
         checkInternetConnection()
         checkPermission()
-        val requestVersion = "a"
-        val appVersion = "b"
-//        if(requestVersion > appVersion){
-//            Log.d("LOXX","download")
-//        } else {
-//            Log.d("LOXX","!!!!!!!!!!!!")
-//        }
-//
-//        if (isAppInstalled()){
-//            val pInfo = packageManager.getPackageInfo("com.example.kkaminets.updateretis", 0)
-//            Log.d("LOXX","yes")
-//            Log.d("LOXX","version - ${pInfo.versionName}, version code - ${PackageInfoCompat.getLongVersionCode(pInfo)}")
-//             vwrsion = pInfo.versionName
-//        } else {
-//            Log.d("LOXX","no")
-//            vwrsion = ""
-//        }
-
-        runCatching {
-             pInfo = packageManager.getPackageInfo("com.example.kkaminets.updateretis", 0)
-        }.onSuccess {
-            Log.d("LOXX","version - ${pInfo.versionName}")
-        }.onFailure {
-            Log.d("LOXX","version - NULL")
+        if (isOldUpdaterInstalled()){
+            deletePackage()
         }
-
     }
 
+    private fun writeETISVersion(){
+        runCatching {
+            pInfo = packageManager.getPackageInfo(Constants.APP_ETIS_PACKAGE_NAME, 0)
+        }.onSuccess {
+            appETISVersion = convertAppVersionToInt(pInfo.versionName)
+        }.onFailure {
+            appETISVersion = 0
+        }
+    }
+
+    private fun convertAppVersionToInt(appVersion: String): Int {
+        val arr = appVersion.split(".").toTypedArray()
+        return (arr[0] + arr[1] + arr[2]).toInt()
+    }
 
     private fun checkPermission() {
         permission.check(this)
@@ -80,35 +74,54 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-
-    fun isOldUpdaterInstalled(): Boolean {
-        return try {
-            this@MainActivity.packageManager.getApplicationInfo("com.example.kkaminets.updateretis", 0)
-            true
-        } catch (e: PackageManager.NameNotFoundException) {
-            false
+    private fun deletePackage() {
+        runCatching {
+            val command = "pm uninstall com.example.kkaminets.updateretis"
+            val proc = Runtime.getRuntime().exec(arrayOf("su", "-c", command))
+            proc.waitFor()
+        }.onSuccess {
+            Log.d("LOXX","old updater deleted")
+        }.onFailure {
+            Log.d("LOXX","old updater no deleted")
         }
+    }
+
+    private fun isOldUpdaterInstalled(): Boolean {
+        var isInstalled = false
+        runCatching {
+            this@MainActivity.packageManager.getApplicationInfo(
+                "com.example.kkaminets.updateretis",
+                0
+            )
+        }.onSuccess {
+            isInstalled = true
+            Log.d("LOXX","old updater installed")
+        }.onFailure {
+            isInstalled = false
+            Log.d("LOXX","old updater notFound")
+        }
+        return isInstalled
     }
 
     override fun onResume() {
         super.onResume()
-//        if (ContextCompat.checkSelfPermission(
-//                this,
-//                Manifest.permission.WRITE_EXTERNAL_STORAGE
-//            ) == PackageManager.PERMISSION_GRANTED && PreferencesManager.getInstance(this)
-//                .getBoolean(PreferencesManager.PREF_NETWORK_IS_ACTIVE, false)
-//        ) {
-//            Log.d("LOX", "YES")
-//            CoroutineScope(Dispatchers.IO).launch {
-//                val a = RemoteDataSource.retrofit.getApplication()
-//                Log.d("LOX", "${a.map { it.name }}")
-//            }
-//        } else {
-//            Log.d("LOX", "NO")
-//            if (isBackPressed) {
-//                showPermissionDialog()
-//            }
-//        }
+        if (ContextCompat.checkSelfPermission(
+                this,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE
+            ) == PackageManager.PERMISSION_GRANTED ) {
+            Log.d("LOXX", "YES")
+            writeETISVersion()
+            Log.d("LOXX","etisVersion - $appETISVersion")
+            CoroutineScope(Dispatchers.IO).launch {
+                val a = RemoteDataSource.retrofit.getApplication()
+                Log.d("LOXX", "request version - ${convertAppVersionToInt(a[0].version)}")
+            }
+        } else {
+            Log.d("LOXX", "NO")
+            if (isBackPressed) {
+                showPermissionDialog()
+            }
+        }
     }
 
     override fun onBackPressed() {
@@ -161,7 +174,7 @@ class MainActivity : AppCompatActivity() {
                     container?.isVisible = true
                     lottieInternetError?.isVisible = false
 
-                    checkInternetConnectionViewModel.stopNetworkCheckState()
+                    //checkInternetConnectionViewModel.stopNetworkCheckState()
 
                     Log.d("INTERNET_CONNECTED", "IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII")
                 } else {

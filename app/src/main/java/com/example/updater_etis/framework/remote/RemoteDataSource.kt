@@ -13,7 +13,7 @@ object RemoteDataSource {
     private val gson = GsonBuilder().create()
 
     val retrofit: Api = Retrofit.Builder()
-        .baseUrl(Constants.BASE_URL)
+        .baseUrl("http://${Constants.BASE_URL}")
         .addConverterFactory(GsonConverterFactory.create(gson))
         .client(getHttpClient())
         .build()
