@@ -19,6 +19,7 @@ import com.example.updater_etis.app.presentation.viewModel.CheckInternetConnecti
 import com.example.updater_etis.databinding.ActivityMainBinding
 import com.example.updater_etis.framework.remote.RemoteDataSource
 import com.example.updater_etis.utils.Constants
+import com.example.updater_etis.utils.isAppInstalled
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -39,6 +40,7 @@ class MainActivity : AppCompatActivity() {
     }
     private var isBackPressed = false
 
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -46,12 +48,12 @@ class MainActivity : AppCompatActivity() {
         hideSystemUI()
         checkInternetConnection()
         checkPermission()
-        if (isOldUpdaterInstalled()){
+        if (isAppInstalled(this, Constants.OLD_UPDATER_PACKAGE_NAME)) {
             deletePackage()
         }
     }
 
-    private fun writeETISVersion(){
+    private fun writeETISVersion() {
         runCatching {
             pInfo = packageManager.getPackageInfo(Constants.APP_ETIS_PACKAGE_NAME, 0)
         }.onSuccess {
@@ -76,48 +78,34 @@ class MainActivity : AppCompatActivity() {
 
     private fun deletePackage() {
         runCatching {
-            val command = "pm uninstall com.example.kkaminets.updateretis"
+            val command = "pm uninstall ${Constants.OLD_UPDATER_PACKAGE_NAME}"
             val proc = Runtime.getRuntime().exec(arrayOf("su", "-c", command))
             proc.waitFor()
         }.onSuccess {
-            Log.d("LOXX","old updater deleted")
+            Log.d(Constants.OLD_UPDATER_LOG, "Old updater deleted")
         }.onFailure {
-            Log.d("LOXX","old updater no deleted")
+            Log.d(Constants.OLD_UPDATER_LOG, "Old updater no deleted")
         }
     }
 
-    private fun isOldUpdaterInstalled(): Boolean {
-        var isInstalled = false
-        runCatching {
-            this@MainActivity.packageManager.getApplicationInfo(
-                "com.example.kkaminets.updateretis",
-                0
-            )
-        }.onSuccess {
-            isInstalled = true
-            Log.d("LOXX","old updater installed")
-        }.onFailure {
-            isInstalled = false
-            Log.d("LOXX","old updater notFound")
-        }
-        return isInstalled
-    }
 
     override fun onResume() {
         super.onResume()
         if (ContextCompat.checkSelfPermission(
                 this,
                 Manifest.permission.WRITE_EXTERNAL_STORAGE
-            ) == PackageManager.PERMISSION_GRANTED ) {
-            Log.d("LOXX", "YES")
+            ) == PackageManager.PERMISSION_GRANTED
+        ) {
+            Log.d(Constants.PERMISSION_LOG, "Permission granted.")
             writeETISVersion()
-            Log.d("LOXX","etisVersion - $appETISVersion")
-            CoroutineScope(Dispatchers.IO).launch {
-                val a = RemoteDataSource.retrofit.getApplication()
-                Log.d("LOXX", "request version - ${convertAppVersionToInt(a[0].version)}")
-            }
+            startPingServer()
+
+//            CoroutineScope(Dispatchers.IO).launch {
+//                val a = RemoteDataSource.retrofit.getApplication()
+//                Log.d("LOXX", "request version - ${convertAppVersionToInt(a[0].version)}")
+//            }
         } else {
-            Log.d("LOXX", "NO")
+            Log.d(Constants.PERMISSION_LOG, "Permission denied.")
             if (isBackPressed) {
                 showPermissionDialog()
             }
@@ -166,38 +154,61 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun checkInternetConnection() {
-        checkInternetConnectionViewModel.networkIsConnected.observe(this) {
-            with(binding) {
-                if (it) {
-                    Log.d(Constants.INTERNET_CONNECTED_LOG, "Internet Connected")
-                    textLoading?.isVisible = true
-                    container?.isVisible = true
-                    lottieInternetError?.isVisible = false
+        with(checkInternetConnectionViewModel) {
+            networkIsConnected.observe(this@MainActivity) {
+                with(binding) {
+                    if (it) {
+                        Log.d(Constants.INTERNET_CONNECTED_LOG, "Internet Connected")
+                        textLoading?.isVisible = true
+                        container?.isVisible = true
+                        lottieInternetError?.isVisible = false
 
-                    //checkInternetConnectionViewModel.stopNetworkCheckState()
-
-                    Log.d("INTERNET_CONNECTED", "IIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIIII")
-                } else {
-                    Log.d(Constants.INTERNET_CONNECTED_LOG, "Internet no connected")
-                    textLoading?.isVisible = false
-                    container?.isVisible = false
-                    lottieInternetError?.isVisible = true
+                        stopPingServer()
+                        CoroutineScope(Dispatchers.IO).launch {
+                            val a = RemoteDataSource.retrofit.getApplication()
+                            Log.d(
+                                "INTERNET_CONNECTED",
+                                "request version - ${convertAppVersionToInt(a[0].version)}"
+                            )
+                        }
+                    } else {
+                        Log.d(Constants.INTERNET_CONNECTED_LOG, "Internet no connected")
+                        textLoading?.isVisible = false
+                        container?.isVisible = false
+                        lottieInternetError?.isVisible = true
+                    }
                 }
             }
         }
     }
 
-    override fun onStart() {
-        super.onStart()
-        checkInternetConnectionViewModel.startNetworkCheckState()
+    private fun checkInstallAppETIS() {
+        if (isAppInstalled(this, Constants.APP_ETIS_PACKAGE_NAME)) {
+            Log.d("LOXX", "ETIS - OK")
+        } else {
+            Log.d("LOXX", "ETIS - NOOOOOO")
+        }
+    }
 
+
+    private fun startPingServer() {
+        with(checkInternetConnectionViewModel) {
+            startNetworkCheckState()
+            startCheckExitValue()
+        }
+    }
+
+    private fun stopPingServer() {
+        with(checkInternetConnectionViewModel) {
+            stopNetworkCheckState()
+            stopCheckExitValue()
+        }
     }
 
     override fun onStop() {
         super.onStop()
-        checkInternetConnectionViewModel.stopNetworkCheckState()
+        stopPingServer()
     }
-
 
     @Suppress("DEPRECATION")
     private fun hideSystemUI() {
