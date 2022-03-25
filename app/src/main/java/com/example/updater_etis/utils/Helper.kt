@@ -16,3 +16,8 @@ fun isAppInstalled(context: Context, packageName: String): Boolean {
     }
     return isInstalled
 }
+
+fun convertAppVersionToInt(appVersion: String): Int {
+    val arr = appVersion.split(".").toTypedArray()
+    return (arr[0] + arr[1] + arr[2]).toInt()
+}

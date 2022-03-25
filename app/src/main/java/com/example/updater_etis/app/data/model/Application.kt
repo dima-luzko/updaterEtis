@@ -8,5 +8,5 @@ data class Application(
     @SerializedName("version")
     val version : String,
     @SerializedName("app")
-    val app: String
+    val appUrl: String
 )

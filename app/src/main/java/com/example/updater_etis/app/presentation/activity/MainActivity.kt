@@ -19,6 +19,7 @@ import com.example.updater_etis.app.presentation.viewModel.CheckInternetConnecti
 import com.example.updater_etis.databinding.ActivityMainBinding
 import com.example.updater_etis.framework.remote.RemoteDataSource
 import com.example.updater_etis.utils.Constants
+import com.example.updater_etis.utils.convertAppVersionToInt
 import com.example.updater_etis.utils.isAppInstalled
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -48,6 +49,7 @@ class MainActivity : AppCompatActivity() {
         hideSystemUI()
         checkInternetConnection()
         checkPermission()
+        checkInstallAppETIS()
         if (isAppInstalled(this, Constants.OLD_UPDATER_PACKAGE_NAME)) {
             deletePackage()
         }
@@ -63,10 +65,19 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun convertAppVersionToInt(appVersion: String): Int {
-        val arr = appVersion.split(".").toTypedArray()
-        return (arr[0] + arr[1] + arr[2]).toInt()
+    private fun getNewETISVersion(){
+        checkInternetConnectionViewModel.getApplicationVersionInfo()
     }
+
+    private fun equalsETISVersion(){
+        checkInternetConnectionViewModel.applicationVersion.observe(this){ requestVersion ->
+            Log.d(
+                Constants.INTERNET_CONNECTED_LOG,
+                "request version - $requestVersion"
+            )
+        }
+    }
+
 
     private fun checkPermission() {
         permission.check(this)
@@ -162,15 +173,16 @@ class MainActivity : AppCompatActivity() {
                         textLoading?.isVisible = true
                         container?.isVisible = true
                         lottieInternetError?.isVisible = false
-
                         stopPingServer()
-                        CoroutineScope(Dispatchers.IO).launch {
-                            val a = RemoteDataSource.retrofit.getApplication()
-                            Log.d(
-                                "INTERNET_CONNECTED",
-                                "request version - ${convertAppVersionToInt(a[0].version)}"
-                            )
-                        }
+                        getNewETISVersion()
+                        equalsETISVersion()
+//                        CoroutineScope(Dispatchers.IO).launch {
+//                            val a = RemoteDataSource.retrofit.getApplication()
+//                            Log.d(
+//                                "INTERNET_CONNECTED",
+//                                "request version - ${convertAppVersionToInt(a[0].version)}"
+//                            )
+//                        }
                     } else {
                         Log.d(Constants.INTERNET_CONNECTED_LOG, "Internet no connected")
                         textLoading?.isVisible = false
@@ -183,11 +195,18 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun checkInstallAppETIS() {
-        if (isAppInstalled(this, Constants.APP_ETIS_PACKAGE_NAME)) {
-            Log.d("LOXX", "ETIS - OK")
-        } else {
-            Log.d("LOXX", "ETIS - NOOOOOO")
+        checkInternetConnectionViewModel.isStoopedPingServer.observe(this){ isStoopedPingServer ->
+            if (isStoopedPingServer){
+                if (isAppInstalled(this, Constants.APP_ETIS_PACKAGE_NAME)) {
+                    //TODO: Add logick for open ETIS
+                    Log.d("LOXX", "ETIS - OK")
+                } else {
+                    Log.d("LOXX", "ETIS - NOOOOOO")
+                    startPingServer()
+                }
+            }
         }
+
     }
 
 

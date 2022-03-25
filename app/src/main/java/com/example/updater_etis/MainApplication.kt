@@ -3,6 +3,7 @@ package com.example.updater_etis
 import android.app.Application
 import android.content.Context
 import com.example.updater_etis.app.presentation.di.dataSourceModules
+import com.example.updater_etis.app.presentation.di.repositoryModules
 import com.example.updater_etis.app.presentation.di.viewModelModules
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
@@ -15,7 +16,7 @@ class MainApplication: Application() {
         startKoin {
             androidLogger(if (BuildConfig.DEBUG) Level.ERROR else Level.NONE)
             androidContext(this@MainApplication)
-            modules(listOf(dataSourceModules, viewModelModules))
+            modules(listOf(dataSourceModules, viewModelModules, repositoryModules))
         }
     }
 

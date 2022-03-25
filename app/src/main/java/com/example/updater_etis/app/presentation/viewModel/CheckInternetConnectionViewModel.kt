@@ -5,8 +5,10 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.updater_etis.app.domain.repository.ApplicationRepository
 import com.example.updater_etis.utils.Constants
 import com.example.updater_etis.utils.Constants.Companion.INTERNET_CONNECTED_LOG
+import com.example.updater_etis.utils.convertAppVersionToInt
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -15,10 +17,17 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 
 
-class CheckInternetConnectionViewModel : ViewModel() {
+class CheckInternetConnectionViewModel constructor(private val applicationRepository: ApplicationRepository) :
+    ViewModel() {
 
     private val _networkIsConnected = MutableLiveData<Boolean>()
     val networkIsConnected: LiveData<Boolean> = _networkIsConnected
+
+    private val _isStoopedPingServer = MutableLiveData<Boolean>()
+    val isStoopedPingServer: LiveData<Boolean> = _isStoopedPingServer
+
+    private val _applicationVersion = MutableLiveData<Int>()
+    val applicationVersion: LiveData<Int> = _applicationVersion
 
     private var job: Job? = null
     private var jobForExitValue: Job? = null
@@ -33,9 +42,9 @@ class CheckInternetConnectionViewModel : ViewModel() {
             commandList.add(Constants.BASE_URL)
             networkState(commandList)
         }
+        _isStoopedPingServer.postValue(false)
         Log.d(INTERNET_CONNECTED_LOG, "start check internet connection")
     }
-
 
     fun startCheckExitValue() {
         jobForExitValue = viewModelScope.launch(Dispatchers.IO) {
@@ -54,6 +63,12 @@ class CheckInternetConnectionViewModel : ViewModel() {
         Log.d(INTERNET_CONNECTED_LOG, "stop check internet connection")
     }
 
+    fun getApplicationVersionInfo() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val version = applicationRepository.getApplicationInfo()[0].version
+            _applicationVersion.postValue(convertAppVersionToInt(version))
+        }
+    }
 
     private suspend fun networkState(commandList: ArrayList<String>) {
         runCatching {
@@ -83,8 +98,7 @@ class CheckInternetConnectionViewModel : ViewModel() {
                 if (exitValue != 0) {
                     Log.d(INTERNET_CONNECTED_LOG, "@@@@@@@@@@@@@@@@@@@")
                     stopNetworkCheckState()
-                    //delay
-                    //flag true
+                    _isStoopedPingServer.postValue(true)
                     break
                 }
             }
