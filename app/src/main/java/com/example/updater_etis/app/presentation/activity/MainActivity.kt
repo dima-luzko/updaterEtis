@@ -15,6 +15,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import com.example.updater_etis.R
+import com.example.updater_etis.app.domain.repository.ApplicationRepository
 import com.example.updater_etis.app.presentation.viewModel.CheckInternetConnectionViewModel
 import com.example.updater_etis.databinding.ActivityMainBinding
 import com.example.updater_etis.framework.remote.RemoteDataSource
@@ -25,7 +26,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import net.codecision.startask.permissions.Permission
+import org.koin.android.ext.android.inject
 import org.koin.androidx.viewmodel.ext.android.viewModel
+import java.util.*
 
 
 class MainActivity : AppCompatActivity() {
@@ -40,6 +43,7 @@ class MainActivity : AppCompatActivity() {
             .build()
     }
     private var isBackPressed = false
+    private val applicationRepository: ApplicationRepository by inject()
 
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -65,19 +69,20 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun getNewETISVersion(){
-        checkInternetConnectionViewModel.getApplicationVersionInfo()
-    }
+    private fun equalsETISVersion() {
+        CoroutineScope(Dispatchers.IO).launch {
+            val requestVersion =
+                convertAppVersionToInt(applicationRepository.getApplicationInfo().version)
+            if (requestVersion > appETISVersion) {
+                //TODO: Add Download logick
+                Log.d(Constants.INTERNET_CONNECTED_LOG, "download")
+            } else {
+                //TODO: Add open app ETIS
+                Log.d(Constants.INTERNET_CONNECTED_LOG, "open app")
+            }
 
-    private fun equalsETISVersion(){
-        checkInternetConnectionViewModel.applicationVersion.observe(this){ requestVersion ->
-            Log.d(
-                Constants.INTERNET_CONNECTED_LOG,
-                "request version - $requestVersion"
-            )
         }
     }
-
 
     private fun checkPermission() {
         permission.check(this)
@@ -110,11 +115,6 @@ class MainActivity : AppCompatActivity() {
             Log.d(Constants.PERMISSION_LOG, "Permission granted.")
             writeETISVersion()
             startPingServer()
-
-//            CoroutineScope(Dispatchers.IO).launch {
-//                val a = RemoteDataSource.retrofit.getApplication()
-//                Log.d("LOXX", "request version - ${convertAppVersionToInt(a[0].version)}")
-//            }
         } else {
             Log.d(Constants.PERMISSION_LOG, "Permission denied.")
             if (isBackPressed) {
@@ -174,15 +174,8 @@ class MainActivity : AppCompatActivity() {
                         container?.isVisible = true
                         lottieInternetError?.isVisible = false
                         stopPingServer()
-                        getNewETISVersion()
                         equalsETISVersion()
-//                        CoroutineScope(Dispatchers.IO).launch {
-//                            val a = RemoteDataSource.retrofit.getApplication()
-//                            Log.d(
-//                                "INTERNET_CONNECTED",
-//                                "request version - ${convertAppVersionToInt(a[0].version)}"
-//                            )
-//                        }
+
                     } else {
                         Log.d(Constants.INTERNET_CONNECTED_LOG, "Internet no connected")
                         textLoading?.isVisible = false
@@ -194,21 +187,21 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun openApp() {
+        startActivity(this.packageManager.getLaunchIntentForPackage(Constants.APP_ETIS_PACKAGE_NAME))
+    }
+
     private fun checkInstallAppETIS() {
-        checkInternetConnectionViewModel.isStoopedPingServer.observe(this){ isStoopedPingServer ->
-            if (isStoopedPingServer){
+        checkInternetConnectionViewModel.isStoopedPingServer.observe(this) { isStoopedPingServer ->
+            if (isStoopedPingServer) {
                 if (isAppInstalled(this, Constants.APP_ETIS_PACKAGE_NAME)) {
-                    //TODO: Add logick for open ETIS
-                    Log.d("LOXX", "ETIS - OK")
+                    openApp()
                 } else {
-                    Log.d("LOXX", "ETIS - NOOOOOO")
                     startPingServer()
                 }
             }
         }
-
     }
-
 
     private fun startPingServer() {
         with(checkInternetConnectionViewModel) {

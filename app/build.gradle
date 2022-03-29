@@ -48,7 +48,10 @@ dependencies {
     def ok_http = "4.9.1"
     def lottie = "4.2.1"
     def permission = "1.0.5"
+    def fetch = "3.1.6"
 
+    //Fetch
+    implementation "androidx.tonyodev.fetch2:xfetch2:$fetch"
     //Koin
     implementation 'io.insert-koin:koin-android:3.1.5'
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:2.4.1"

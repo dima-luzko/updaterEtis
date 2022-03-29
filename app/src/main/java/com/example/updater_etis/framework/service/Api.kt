@@ -13,5 +13,5 @@ interface Api {
         "Authorization: ${BuildConfig.TOKEN}"
     )
     @GET("/app")
-    suspend fun getApplication() : List<Application>
+    suspend fun getApplication() : Application
 }

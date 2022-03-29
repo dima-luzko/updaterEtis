@@ -3,7 +3,7 @@ package com.example.updater_etis.app.data.model
 import com.google.gson.annotations.SerializedName
 
 data class Application(
-    @SerializedName("name")
+    @SerializedName("name_app")
     val name: String,
     @SerializedName("version")
     val version : String,

@@ -26,8 +26,8 @@ class CheckInternetConnectionViewModel constructor(private val applicationReposi
     private val _isStoopedPingServer = MutableLiveData<Boolean>()
     val isStoopedPingServer: LiveData<Boolean> = _isStoopedPingServer
 
-    private val _applicationVersion = MutableLiveData<Int>()
-    val applicationVersion: LiveData<Int> = _applicationVersion
+    private val _applicationVersion = MutableLiveData<String>()
+    val applicationVersion: LiveData<String> = _applicationVersion
 
     private var job: Job? = null
     private var jobForExitValue: Job? = null
@@ -63,13 +63,6 @@ class CheckInternetConnectionViewModel constructor(private val applicationReposi
         Log.d(INTERNET_CONNECTED_LOG, "stop check internet connection")
     }
 
-    fun getApplicationVersionInfo() {
-        viewModelScope.launch(Dispatchers.IO) {
-            val version = applicationRepository.getApplicationInfo()[0].version
-            _applicationVersion.postValue(convertAppVersionToInt(version))
-        }
-    }
-
     private suspend fun networkState(commandList: ArrayList<String>) {
         runCatching {
             while (true) {
@@ -92,6 +85,7 @@ class CheckInternetConnectionViewModel constructor(private val applicationReposi
 
     private suspend fun checkExitValue() {
         while (true) {
+            //TODO: Delete log!!
             Log.d(INTERNET_CONNECTED_LOG, "!!!!!!!!!!")
             if (exitValue != 0) {
                 delay(30000)

@@ -6,7 +6,7 @@ import com.example.updater_etis.framework.remote.RemoteDataSource
 
 class ApplicationRepositoryImpl(private val dataSource: RemoteDataSource): ApplicationRepository {
 
-    override suspend fun getApplicationInfo(): List<Application> {
+    override suspend fun getApplicationInfo(): Application {
         return dataSource.retrofit.getApplication()
     }
 }
