@@ -1,5 +1,6 @@
 package com.example.updater_etis.app.presentation.activity
 
+
 import android.Manifest
 import android.app.AlertDialog
 import android.content.Intent
@@ -18,17 +19,17 @@ import com.example.updater_etis.R
 import com.example.updater_etis.app.domain.repository.ApplicationRepository
 import com.example.updater_etis.app.presentation.viewModel.CheckInternetConnectionViewModel
 import com.example.updater_etis.databinding.ActivityMainBinding
-import com.example.updater_etis.framework.remote.RemoteDataSource
 import com.example.updater_etis.utils.Constants
+import com.example.updater_etis.utils.DownloadHelper
 import com.example.updater_etis.utils.convertAppVersionToInt
 import com.example.updater_etis.utils.isAppInstalled
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import net.codecision.startask.permissions.Permission
 import org.koin.android.ext.android.inject
 import org.koin.androidx.viewmodel.ext.android.viewModel
-import java.util.*
 
 
 class MainActivity : AppCompatActivity() {
@@ -45,7 +46,6 @@ class MainActivity : AppCompatActivity() {
     private var isBackPressed = false
     private val applicationRepository: ApplicationRepository by inject()
 
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
@@ -57,6 +57,9 @@ class MainActivity : AppCompatActivity() {
         if (isAppInstalled(this, Constants.OLD_UPDATER_PACKAGE_NAME)) {
             deletePackage()
         }
+//        binding.root.setOnClickListener {
+//            Log.d(Constants.RECEIVER_LOG, "download - ${DownloadHelper.downloadCompleted}")
+//        }
     }
 
     private fun writeETISVersion() {
@@ -71,16 +74,30 @@ class MainActivity : AppCompatActivity() {
 
     private fun equalsETISVersion() {
         CoroutineScope(Dispatchers.IO).launch {
-            val requestVersion =
-                convertAppVersionToInt(applicationRepository.getApplicationInfo().version)
-            if (requestVersion > appETISVersion) {
-                //TODO: Add Download logick
-                Log.d(Constants.INTERNET_CONNECTED_LOG, "download")
-            } else {
-                //TODO: Add open app ETIS
-                Log.d(Constants.INTERNET_CONNECTED_LOG, "open app")
+            runCatching {
+                val applicationInfo = applicationRepository.getApplicationInfo()
+                val requestVersion = convertAppVersionToInt(applicationInfo.version)
+                val dirPath = application.filesDir.absolutePath + "/"
+                if (requestVersion > appETISVersion) {
+                    DownloadHelper.downloadApk(
+                        context = this@MainActivity,
+                        url = applicationInfo.appUrl,
+                        dirPath = dirPath,
+                        fileName = DownloadHelper.getAppNameFromUrl(applicationInfo.appUrl),
+                        viewModel = checkInternetConnectionViewModel
+                    )
+                } else {
+                    openApp()
+                }
+            }.onFailure {
+                Log.d(Constants.INTERNET_CONNECTED_LOG, "SERVER error - $it")
+                delay(300000)
+                if (isAppInstalled(this@MainActivity, Constants.APP_ETIS_PACKAGE_NAME)) {
+                    openApp()
+                } else {
+                    startPingServer()
+                }
             }
-
         }
     }
 
@@ -115,6 +132,8 @@ class MainActivity : AppCompatActivity() {
             Log.d(Constants.PERMISSION_LOG, "Permission granted.")
             writeETISVersion()
             startPingServer()
+
+
         } else {
             Log.d(Constants.PERMISSION_LOG, "Permission denied.")
             if (isBackPressed) {

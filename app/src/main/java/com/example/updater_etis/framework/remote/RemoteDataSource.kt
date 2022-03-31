@@ -24,7 +24,7 @@ object RemoteDataSource {
         loggingInterceptor.level = HttpLoggingInterceptor.Level.BODY
         val builder = OkHttpClient.Builder()
             .addInterceptor(loggingInterceptor)
-            .connectTimeout(5L, TimeUnit.SECONDS)
+            .connectTimeout(6000L, TimeUnit.SECONDS)
         return builder.build()
     }
 }
