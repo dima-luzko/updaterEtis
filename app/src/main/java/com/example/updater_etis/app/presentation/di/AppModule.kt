@@ -12,7 +12,7 @@ val dataSourceModules = module {
 }
 
 val viewModelModules = module {
-    viewModel { CheckInternetConnectionViewModel(get()) }
+    viewModel { CheckInternetConnectionViewModel() }
 }
 
 val repositoryModules = module {

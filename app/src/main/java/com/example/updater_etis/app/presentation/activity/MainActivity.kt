@@ -27,7 +27,6 @@ import kotlinx.coroutines.launch
 import net.codecision.startask.permissions.Permission
 import org.koin.android.ext.android.inject
 import org.koin.androidx.viewmodel.ext.android.viewModel
-import java.io.DataOutputStream
 import kotlin.system.exitProcess
 
 
@@ -59,6 +58,8 @@ class MainActivity : AppCompatActivity() {
         binding.root.setOnLongClickListener {
             exitProcess(0)
         }
+
+        //TODO: Chenge all timeout in project and refactore code
     }
 
     private fun writeETISVersion() {
@@ -87,7 +88,10 @@ class MainActivity : AppCompatActivity() {
                         viewModel = checkInternetConnectionViewModel
                     )
                 } else {
-                    Log.d(Constants.APP_INSTALL_LOG, "Update is not required. Current app version - ${applicationInfo.version}")
+                    Log.d(
+                        Constants.APP_INSTALL_LOG,
+                        "Update is not required. Current app version - ${applicationInfo.version}"
+                    )
                     openApp(context = this@MainActivity)
                 }
             }.onFailure {
@@ -182,15 +186,14 @@ class MainActivity : AppCompatActivity() {
             networkIsConnected.observe(this@MainActivity) {
                 with(binding) {
                     if (it) {
-                        Log.d(Constants.INTERNET_CONNECTED_LOG, "Internet Connected")
+                        Log.d(Constants.INTERNET_CONNECTED_LOG, "Internet Connected.")
                         textLoading?.isVisible = true
                         container?.isVisible = true
                         lottieInternetError?.isVisible = false
                         stopPingServer()
                         equalsETISVersion()
-
                     } else {
-                        Log.d(Constants.INTERNET_CONNECTED_LOG, "Internet no connected")
+                        Log.d(Constants.INTERNET_CONNECTED_LOG, "Internet no connected.")
                         textLoading?.isVisible = false
                         container?.isVisible = false
                         lottieInternetError?.isVisible = true

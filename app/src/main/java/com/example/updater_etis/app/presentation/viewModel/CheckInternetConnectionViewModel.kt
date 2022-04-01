@@ -5,10 +5,8 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.updater_etis.app.domain.repository.ApplicationRepository
 import com.example.updater_etis.utils.Constants
 import com.example.updater_etis.utils.Constants.Companion.INTERNET_CONNECTED_LOG
-import com.example.updater_etis.utils.convertAppVersionToInt
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -17,17 +15,13 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 
 
-class CheckInternetConnectionViewModel constructor(private val applicationRepository: ApplicationRepository) :
-    ViewModel() {
+class CheckInternetConnectionViewModel : ViewModel() {
 
     private val _networkIsConnected = MutableLiveData<Boolean>()
     val networkIsConnected: LiveData<Boolean> = _networkIsConnected
 
     private val _isStoopedPingServer = MutableLiveData<Boolean>()
     val isStoopedPingServer: LiveData<Boolean> = _isStoopedPingServer
-
-    private val _applicationVersion = MutableLiveData<String>()
-    val applicationVersion: LiveData<String> = _applicationVersion
 
     private var job: Job? = null
     private var jobForExitValue: Job? = null
@@ -43,24 +37,24 @@ class CheckInternetConnectionViewModel constructor(private val applicationReposi
             networkState(commandList)
         }
         _isStoopedPingServer.postValue(false)
-        Log.d(INTERNET_CONNECTED_LOG, "start check internet connection")
+        Log.d(INTERNET_CONNECTED_LOG, "Start check internet connection.")
     }
 
     fun startCheckExitValue() {
         jobForExitValue = viewModelScope.launch(Dispatchers.IO) {
             checkExitValue()
         }
-        Log.d(INTERNET_CONNECTED_LOG, "start check exit value")
+        Log.d(INTERNET_CONNECTED_LOG, "Start check exit value.")
     }
 
     fun stopCheckExitValue() {
         jobForExitValue?.cancel()
-        Log.d(INTERNET_CONNECTED_LOG, "stop check exit value")
+        Log.d(INTERNET_CONNECTED_LOG, "Stop check exit value.")
     }
 
     fun stopNetworkCheckState() {
         job?.cancel()
-        Log.d(INTERNET_CONNECTED_LOG, "stop check internet connection")
+        Log.d(INTERNET_CONNECTED_LOG, "Stop check internet connection.")
     }
 
     private suspend fun networkState(commandList: ArrayList<String>) {
@@ -73,30 +67,27 @@ class CheckInternetConnectionViewModel constructor(private val applicationReposi
                 if (input.readLine().also { s = it } != null) {
                     exitValue = 0
                     _networkIsConnected.postValue(true)
-                    Log.d(INTERNET_CONNECTED_LOG, "ok - $s")
+                    Log.d(INTERNET_CONNECTED_LOG, "$s")
                 } else {
                     exitValue = 1
                     _networkIsConnected.postValue(false)
                 }
-                delay(5000)
+                delay(10000)
             }
         }
     }
 
     private suspend fun checkExitValue() {
         while (true) {
-            //TODO: Delete log!!
-            Log.d(INTERNET_CONNECTED_LOG, "!!!!!!!!!!")
             if (exitValue != 0) {
-                delay(30000)
+                delay(60000)
                 if (exitValue != 0) {
-                    Log.d(INTERNET_CONNECTED_LOG, "@@@@@@@@@@@@@@@@@@@")
                     stopNetworkCheckState()
                     _isStoopedPingServer.postValue(true)
                     break
                 }
             }
-            delay(5000)
+            delay(10000)
         }
     }
 }

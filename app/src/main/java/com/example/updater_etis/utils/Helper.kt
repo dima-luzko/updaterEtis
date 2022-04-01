@@ -2,7 +2,6 @@ package com.example.updater_etis.utils
 
 import android.content.Context
 import android.util.Log
-import androidx.core.content.ContextCompat.startActivity
 import java.io.DataOutputStream
 import java.io.File
 
@@ -32,7 +31,7 @@ fun openApp(context: Context) {
     context.startActivity(context.packageManager.getLaunchIntentForPackage(Constants.APP_ETIS_PACKAGE_NAME))
 }
 
-fun installApp(path: String, appName : String) {
+fun installApp(path: String, appName: String) {
     runCatching {
         Log.d(Constants.APP_INSTALL_LOG, "Start install application.")
         val command = "pm install -r $path$appName\n"
@@ -46,13 +45,13 @@ fun installApp(path: String, appName : String) {
         }
         process.waitFor()
     }.onSuccess {
-        Log.d(Constants.APP_INSTALL_LOG, "Application install success")
-        val file = File(path,appName)
-        if (file.exists()){
-            Log.d(Constants.APP_INSTALL_LOG, "File delete")
+        Log.d(Constants.APP_INSTALL_LOG, "Application install success.")
+        val file = File(path, appName)
+        if (file.exists()) {
+            Log.d(Constants.APP_INSTALL_LOG, "File delete.")
             file.delete()
         } else {
-            Log.d(Constants.APP_INSTALL_LOG, "File not found")
+            Log.d(Constants.APP_INSTALL_LOG, "File not found.")
         }
     }.onFailure {
         Log.e(Constants.APP_INSTALL_LOG, "Application install failure. Error: $it")

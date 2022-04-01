@@ -10,7 +10,6 @@ import com.example.updater_etis.app.presentation.viewModel.CheckInternetConnecti
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import java.io.DataOutputStream
 
 
 object DownloadHelper {
