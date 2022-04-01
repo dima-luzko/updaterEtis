@@ -10,7 +10,9 @@ class Constants {
         const val OLD_UPDATER_PACKAGE_NAME = "com.example.kkaminets.updateretis"
         const val INTERNET_CONNECTED_LOG = "INTERNET_CONNECTED"
         const val OLD_UPDATER_LOG = "OLD_UPDATER"
-        const val PERMISSION_LOG = "PERMISSION_LOG"
+        const val APP_INSTALL_LOG = "APP_INSTALL"
+        const val PERMISSION_LOG = "PERMISSION"
+        const val DOWNLOAD_LOG = "DOWNLOAD"
         const val REQUEST_PERMISSION_CODE = 102
         const val DOWNLOAD_TIMEOUT_CONNECTION = 1 * 60 * 1000
     }

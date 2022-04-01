@@ -7,6 +7,10 @@ import com.downloader.OnDownloadListener
 import com.downloader.PRDownloader
 import com.downloader.PRDownloaderConfig
 import com.example.updater_etis.app.presentation.viewModel.CheckInternetConnectionViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import java.io.DataOutputStream
 
 
 object DownloadHelper {
@@ -16,6 +20,7 @@ object DownloadHelper {
         url: String,
         dirPath: String,
         fileName: String,
+        appName : String,
         viewModel: CheckInternetConnectionViewModel
     ) {
         PRDownloader.initialize(context)
@@ -26,12 +31,16 @@ object DownloadHelper {
         PRDownloader.initialize(context, config)
         PRDownloader.download(url, dirPath, fileName).build()
             .setOnStartOrResumeListener {
-                Log.d("DOWNLOADSS", "START DOWNLOAD")
+                Log.d(Constants.DOWNLOAD_LOG, "Start download.")
             }.setOnProgressListener {
-                Log.d("DOWNLOADSS", "progress - ${it.currentBytes * 100 / it.totalBytes}")
+                Log.d(Constants.DOWNLOAD_LOG, "Download progress - ${it.currentBytes * 100 / it.totalBytes}%")
             }.start(object : OnDownloadListener {
                 override fun onDownloadComplete() {
-                    Log.d("DOWNLOADSS", "FINISH")
+                    Log.d(Constants.DOWNLOAD_LOG, "Download completed.")
+                    CoroutineScope(Dispatchers.IO).launch{
+                        installApp(dirPath,appName)
+                        openApp(context)
+                    }
                 }
 
                 override fun onError(error: Error?) {
@@ -39,7 +48,7 @@ object DownloadHelper {
                         startNetworkCheckState()
                         startCheckExitValue()
                     }
-                    Log.d("DOWNLOADSS", "ERROR - $error")
+                    Log.e(Constants.DOWNLOAD_LOG, "Download error: $error")
                 }
             })
     }

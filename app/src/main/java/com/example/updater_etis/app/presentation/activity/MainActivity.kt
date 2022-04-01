@@ -19,10 +19,7 @@ import com.example.updater_etis.R
 import com.example.updater_etis.app.domain.repository.ApplicationRepository
 import com.example.updater_etis.app.presentation.viewModel.CheckInternetConnectionViewModel
 import com.example.updater_etis.databinding.ActivityMainBinding
-import com.example.updater_etis.utils.Constants
-import com.example.updater_etis.utils.DownloadHelper
-import com.example.updater_etis.utils.convertAppVersionToInt
-import com.example.updater_etis.utils.isAppInstalled
+import com.example.updater_etis.utils.*
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -30,6 +27,8 @@ import kotlinx.coroutines.launch
 import net.codecision.startask.permissions.Permission
 import org.koin.android.ext.android.inject
 import org.koin.androidx.viewmodel.ext.android.viewModel
+import java.io.DataOutputStream
+import kotlin.system.exitProcess
 
 
 class MainActivity : AppCompatActivity() {
@@ -53,13 +52,13 @@ class MainActivity : AppCompatActivity() {
         hideSystemUI()
         checkInternetConnection()
         checkPermission()
-        checkInstallAppETIS()
+        checkIsStoopedPingServer()
         if (isAppInstalled(this, Constants.OLD_UPDATER_PACKAGE_NAME)) {
             deletePackage()
         }
-//        binding.root.setOnClickListener {
-//            Log.d(Constants.RECEIVER_LOG, "download - ${DownloadHelper.downloadCompleted}")
-//        }
+        binding.root.setOnLongClickListener {
+            exitProcess(0)
+        }
     }
 
     private fun writeETISVersion() {
@@ -84,19 +83,17 @@ class MainActivity : AppCompatActivity() {
                         url = applicationInfo.appUrl,
                         dirPath = dirPath,
                         fileName = DownloadHelper.getAppNameFromUrl(applicationInfo.appUrl),
+                        appName = DownloadHelper.getAppNameFromUrl(applicationInfo.appUrl),
                         viewModel = checkInternetConnectionViewModel
                     )
                 } else {
-                    openApp()
+                    Log.d(Constants.APP_INSTALL_LOG, "Update is not required. Current app version - ${applicationInfo.version}")
+                    openApp(context = this@MainActivity)
                 }
             }.onFailure {
-                Log.d(Constants.INTERNET_CONNECTED_LOG, "SERVER error - $it")
+                Log.e(Constants.INTERNET_CONNECTED_LOG, "Server error: $it")
                 delay(300000)
-                if (isAppInstalled(this@MainActivity, Constants.APP_ETIS_PACKAGE_NAME)) {
-                    openApp()
-                } else {
-                    startPingServer()
-                }
+                checkInstallAppETIS()
             }
         }
     }
@@ -111,16 +108,15 @@ class MainActivity : AppCompatActivity() {
 
     private fun deletePackage() {
         runCatching {
-            val command = "pm uninstall ${Constants.OLD_UPDATER_PACKAGE_NAME}"
+            val command = "pm uninstall -k --user 0 ${Constants.OLD_UPDATER_PACKAGE_NAME}"
             val proc = Runtime.getRuntime().exec(arrayOf("su", "-c", command))
             proc.waitFor()
         }.onSuccess {
-            Log.d(Constants.OLD_UPDATER_LOG, "Old updater deleted")
+            Log.d(Constants.OLD_UPDATER_LOG, "Old updater deleted success.")
         }.onFailure {
-            Log.d(Constants.OLD_UPDATER_LOG, "Old updater no deleted")
+            Log.e(Constants.OLD_UPDATER_LOG, "Old updater deleted failure. Error: $it")
         }
     }
-
 
     override fun onResume() {
         super.onResume()
@@ -132,8 +128,6 @@ class MainActivity : AppCompatActivity() {
             Log.d(Constants.PERMISSION_LOG, "Permission granted.")
             writeETISVersion()
             startPingServer()
-
-
         } else {
             Log.d(Constants.PERMISSION_LOG, "Permission denied.")
             if (isBackPressed) {
@@ -206,18 +200,22 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun openApp() {
-        startActivity(this.packageManager.getLaunchIntentForPackage(Constants.APP_ETIS_PACKAGE_NAME))
+    private fun checkInstallAppETIS() {
+        if (isAppInstalled(
+                context = this@MainActivity,
+                packageName = Constants.APP_ETIS_PACKAGE_NAME
+            )
+        ) {
+            openApp(context = this@MainActivity)
+        } else {
+            startPingServer()
+        }
     }
 
-    private fun checkInstallAppETIS() {
+    private fun checkIsStoopedPingServer() {
         checkInternetConnectionViewModel.isStoopedPingServer.observe(this) { isStoopedPingServer ->
             if (isStoopedPingServer) {
-                if (isAppInstalled(this, Constants.APP_ETIS_PACKAGE_NAME)) {
-                    openApp()
-                } else {
-                    startPingServer()
-                }
+                checkInstallAppETIS()
             }
         }
     }
@@ -239,6 +237,7 @@ class MainActivity : AppCompatActivity() {
     override fun onStop() {
         super.onStop()
         stopPingServer()
+        exitProcess(0)
     }
 
     @Suppress("DEPRECATION")
