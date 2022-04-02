@@ -19,7 +19,7 @@ object DownloadHelper {
         url: String,
         dirPath: String,
         fileName: String,
-        appName : String,
+        appName: String,
         viewModel: CheckInternetConnectionViewModel
     ) {
         PRDownloader.initialize(context)
@@ -32,13 +32,16 @@ object DownloadHelper {
             .setOnStartOrResumeListener {
                 Log.d(Constants.DOWNLOAD_LOG, "Start download.")
             }.setOnProgressListener {
-                Log.d(Constants.DOWNLOAD_LOG, "Download progress - ${it.currentBytes * 100 / it.totalBytes}%")
+                Log.d(
+                    Constants.DOWNLOAD_LOG,
+                    "Download progress - ${it.currentBytes * 100 / it.totalBytes}%"
+                )
             }.start(object : OnDownloadListener {
                 override fun onDownloadComplete() {
                     Log.d(Constants.DOWNLOAD_LOG, "Download completed.")
-                    CoroutineScope(Dispatchers.IO).launch{
-                        installApp(dirPath,appName)
-                        openApp(context)
+                    CoroutineScope(Dispatchers.IO).launch {
+                        //TODO: что делать если мы словили ошибку при установке (так как нет рут прав)
+                        installApp(context = context, path = dirPath, appName = appName)
                     }
                 }
 
@@ -51,9 +54,4 @@ object DownloadHelper {
                 }
             })
     }
-
-    fun getAppNameFromUrl(url: String): String {
-        return url.substring(url.lastIndexOf("/") + 1)
-    }
-
 }

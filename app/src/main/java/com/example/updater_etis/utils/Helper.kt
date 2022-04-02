@@ -31,7 +31,7 @@ fun openApp(context: Context) {
     context.startActivity(context.packageManager.getLaunchIntentForPackage(Constants.APP_ETIS_PACKAGE_NAME))
 }
 
-fun installApp(path: String, appName: String) {
+fun installApp(context: Context, path: String, appName: String) {
     runCatching {
         Log.d(Constants.APP_INSTALL_LOG, "Start install application.")
         val command = "pm install -r $path$appName\n"
@@ -46,14 +46,23 @@ fun installApp(path: String, appName: String) {
         process.waitFor()
     }.onSuccess {
         Log.d(Constants.APP_INSTALL_LOG, "Application install success.")
-        val file = File(path, appName)
-        if (file.exists()) {
-            Log.d(Constants.APP_INSTALL_LOG, "File delete.")
-            file.delete()
-        } else {
-            Log.d(Constants.APP_INSTALL_LOG, "File not found.")
-        }
+        deleteFileApk(path = path, appName = appName)
+        openApp(context)
     }.onFailure {
         Log.e(Constants.APP_INSTALL_LOG, "Application install failure. Error: $it")
     }
+}
+
+private fun deleteFileApk(path: String, appName: String) {
+    val file = File(path, appName)
+    if (file.exists()) {
+        Log.d(Constants.APP_INSTALL_LOG, "File delete.")
+        file.delete()
+    } else {
+        Log.d(Constants.APP_INSTALL_LOG, "File not found.")
+    }
+}
+
+fun getAppNameFromUrl(url: String): String {
+    return url.substring(url.lastIndexOf("/") + 1)
 }

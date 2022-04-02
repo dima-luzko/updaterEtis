@@ -83,8 +83,8 @@ class MainActivity : AppCompatActivity() {
                         context = this@MainActivity,
                         url = applicationInfo.appUrl,
                         dirPath = dirPath,
-                        fileName = DownloadHelper.getAppNameFromUrl(applicationInfo.appUrl),
-                        appName = DownloadHelper.getAppNameFromUrl(applicationInfo.appUrl),
+                        fileName = getAppNameFromUrl(applicationInfo.appUrl),
+                        appName = getAppNameFromUrl(applicationInfo.appUrl),
                         viewModel = checkInternetConnectionViewModel
                     )
                 } else {
