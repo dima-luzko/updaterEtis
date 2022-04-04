@@ -2,6 +2,7 @@ package com.example.updater_etis.utils
 
 import android.content.Context
 import android.util.Log
+import android.widget.TextView
 import com.downloader.Error
 import com.downloader.OnDownloadListener
 import com.downloader.PRDownloader
@@ -40,8 +41,11 @@ object DownloadHelper {
                 override fun onDownloadComplete() {
                     Log.d(Constants.DOWNLOAD_LOG, "Download completed.")
                     CoroutineScope(Dispatchers.IO).launch {
-                        //TODO: что делать если мы словили ошибку при установке (так как нет рут прав)
-                        installApp(context = context, path = dirPath, appName = appName)
+                        installApp(
+                            context = context,
+                            path = dirPath,
+                            appName = appName
+                        )
                     }
                 }
 

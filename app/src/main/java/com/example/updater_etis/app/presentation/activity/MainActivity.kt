@@ -20,10 +20,7 @@ import com.example.updater_etis.app.domain.repository.ApplicationRepository
 import com.example.updater_etis.app.presentation.viewModel.CheckInternetConnectionViewModel
 import com.example.updater_etis.databinding.ActivityMainBinding
 import com.example.updater_etis.utils.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import net.codecision.startask.permissions.Permission
 import org.koin.android.ext.android.inject
 import org.koin.androidx.viewmodel.ext.android.viewModel
@@ -55,11 +52,13 @@ class MainActivity : AppCompatActivity() {
         if (isAppInstalled(this, Constants.OLD_UPDATER_PACKAGE_NAME)) {
             deletePackage()
         }
+        exitInAppOnLongPress()
+    }
+
+    private fun exitInAppOnLongPress() {
         binding.root.setOnLongClickListener {
             exitProcess(0)
         }
-
-        //TODO: Chenge all timeout in project and refactore code
     }
 
     private fun writeETISVersion() {
@@ -87,6 +86,11 @@ class MainActivity : AppCompatActivity() {
                         appName = getAppNameFromUrl(applicationInfo.appUrl),
                         viewModel = checkInternetConnectionViewModel
                     )
+                    delay(5000)
+                    withContext(Dispatchers.Main) {
+                        changeTextColor()
+                    }
+
                 } else {
                     Log.d(
                         Constants.APP_INSTALL_LOG,
@@ -102,24 +106,22 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun changeTextColor() {
+        if (isApkInstalledFailed) {
+            binding.textLoading?.setTextColor(
+                ContextCompat.getColor(
+                    this@MainActivity,
+                    R.color.text_loading_orange
+                )
+            )
+        }
+    }
+
     private fun checkPermission() {
         permission.check(this)
             .onShowRationale {
                 showPermissionDialog()
             }
-    }
-
-
-    private fun deletePackage() {
-        runCatching {
-            val command = "pm uninstall -k --user 0 ${Constants.OLD_UPDATER_PACKAGE_NAME}"
-            val proc = Runtime.getRuntime().exec(arrayOf("su", "-c", command))
-            proc.waitFor()
-        }.onSuccess {
-            Log.d(Constants.OLD_UPDATER_LOG, "Old updater deleted success.")
-        }.onFailure {
-            Log.e(Constants.OLD_UPDATER_LOG, "Old updater deleted failure. Error: $it")
-        }
     }
 
     override fun onResume() {
@@ -240,8 +242,9 @@ class MainActivity : AppCompatActivity() {
     override fun onStop() {
         super.onStop()
         stopPingServer()
-        exitProcess(0)
+        exitInApp()
     }
+
 
     @Suppress("DEPRECATION")
     private fun hideSystemUI() {
