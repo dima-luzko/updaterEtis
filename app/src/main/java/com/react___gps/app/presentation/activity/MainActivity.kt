@@ -100,7 +100,7 @@ class MainActivity : AppCompatActivity() {
                 }
             }.onFailure {
                 Log.e(Constants.INTERNET_CONNECTED_LOG, "Server error: $it")
-                delay(300000)
+                delay(Constants.REQUEST_EXCEPTION_TIMEOUT)
                 checkInstallAppETIS()
             }
         }

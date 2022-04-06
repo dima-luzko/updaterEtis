@@ -4,6 +4,9 @@ class Constants {
     companion object {
         const val BASE_URL = "test.release.horizont-rnd.by"
         const val APP_ETIS_PACKAGE_NAME = "com.horizont.etis"
+        //for kobrin
+//        const val APP_ETIS_PACKAGE_NAME = "com.react___gps"
+//        const val BASE_URL = "kobrin.release.horizont-rnd.by"
         const val OLD_UPDATER_PACKAGE_NAME = "com.example.kkaminets.updateretis"
         const val INTERNET_CONNECTED_LOG = "INTERNET_CONNECTED"
         const val OLD_UPDATER_LOG = "OLD_UPDATER"
@@ -12,5 +15,6 @@ class Constants {
         const val DOWNLOAD_LOG = "DOWNLOAD"
         const val REQUEST_PERMISSION_CODE = 102
         const val DOWNLOAD_TIMEOUT_CONNECTION = 10 * 60 * 1000
+        const val REQUEST_EXCEPTION_TIMEOUT = 1200000L
     }
 }
