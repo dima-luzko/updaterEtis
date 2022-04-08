@@ -8,8 +8,6 @@ android {
 
     defaultConfig {
         applicationId "com.react___gps"
-        //for kobrin
-//        applicationId "updater.kobrin"
         minSdk 21
         targetSdk 31
         versionCode 43
@@ -21,17 +19,13 @@ android {
     buildTypes {
         debug {
             minifyEnabled false
-            // buildConfigField "String", "TOKEN", ' "Token 0b35cfa7ad5f894e3dbac60f2cc717ec74356cc3" '
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            //token for kobrin
-            buildConfigField "String", "TOKEN", ' "Token d18ad16200d239a3c87e5de096051aeaddbf41ce" '
+            buildConfigField "String", "TOKEN", ' "Token 0b35cfa7ad5f894e3dbac60f2cc717ec74356cc3" '
         }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            //buildConfigField "String", "TOKEN", ' "Token 0b35cfa7ad5f894e3dbac60f2cc717ec74356cc3" '
-            //token for kobrin
-            buildConfigField "String", "TOKEN", ' "Token d18ad16200d239a3c87e5de096051aeaddbf41ce" '
+            buildConfigField "String", "TOKEN", ' "Token 0b35cfa7ad5f894e3dbac60f2cc717ec74356cc3" '
         }
     }
     compileOptions {
